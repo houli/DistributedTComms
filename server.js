@@ -1,11 +1,10 @@
 var http = require('http');
 var childprocess = require('child_process');
 var sqlite3 = require('sqlite3');
-var db = new sqlite3.Database('names.db');
+var db = null;
 
-db.serialize(function() {
-  childprocess.exec('python makedb.py', function(error, stdout, stderr) {
-  });
+childprocess.exec('python makedb.py', function(error, stdout, stderr) {
+  db = new sqlite3.Database('names.db');
 });
 
 var server = http.createServer(function(req, res) {
