@@ -1,17 +1,18 @@
 import sqlite3
+from os.path import isfile
 
-conn = sqlite3.connect('names.db')
-cursor = conn.cursor()
+if not isfile('names.db'):
 
-cursor.execute('CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, completed INTEGER)')
+	conn = sqlite3.connect('names.db')
+	cursor = conn.cursor()
 
-file = open('names-short.txt', 'r')
+	cursor.execute('CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, completed INTEGER)')
+	
+	file = open('names-short.txt', 'r')
+	for i, line in enumerate(file):
+	    cursor.execute('INSERT INTO names(name, completed) VALUES (?, ?) ', (line, 0))
+	    if i % 100000 == 0:
+	        conn.commit()
 
-for i, line in enumerate(file):
-    cursor.execute('INSERT INTO names(name, completed) VALUES (?, ?) ', (line, 0))
-    if i % 100000 == 0:
-        conn.commit()
-
-conn.commit()
-
-conn.close()
+	conn.commit()
+	conn.close()
