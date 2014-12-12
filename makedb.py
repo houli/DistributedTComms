@@ -8,9 +8,9 @@ cursor.execute('CREATE TABLE IF NOT EXISTS names (id INTEGER PRIMARY KEY AUTOINC
 file = open('names-short.txt', 'r')
 
 for i, line in enumerate(file):
-	cursor.execute('INSERT INTO names(name, completed) VALUES (?, ?) ', (line, 0) )
-	if i %100000 == 0:
-		conn.commit()
+    cursor.execute('INSERT INTO names(name, completed) VALUES (?, ?) ', (line, 0))
+    if i % 100000 == 0:
+        conn.commit()
 
 conn.commit()
 
