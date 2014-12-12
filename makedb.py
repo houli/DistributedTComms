@@ -9,7 +9,7 @@ file = open('names-short.txt', 'r')
 
 for i, line in enumerate(file):
 	cursor.execute('INSERT INTO names(name, completed) VALUES (?, ?) ', (line, 0) )
-	if i %1000 == 0:
+	if i %100000 == 0:
 		conn.commit()
 
 conn.commit()
