@@ -1,4 +1,5 @@
-var http = require('http');
+var express = require('express');
+var server = express();
 var childprocess = require('child_process');
 var sqlite3 = require('sqlite3');
 var db = null;
@@ -7,9 +8,9 @@ childprocess.exec('python makedb.py', function(error, stdout, stderr) {
   db = new sqlite3.Database('names.db');
 });
 
-var server = http.createServer(function(req, res) {
-  res.end('Hi');
-}); 
+server.get('/', function(req, res) {
+  res.send('Hi');
+});
 
 var port = 3000;
 server.listen(port);
