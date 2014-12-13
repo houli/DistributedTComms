@@ -38,7 +38,7 @@ server.post('/join', function(req, res) {
   block.workerId = id;
   block.nameToSearch = process.argv[2];
   server.inProgressBlocks.push(block);
-  console.log('Worker \"' + id + '\' has joined.');
+  console.log('Worker \"' + id + '\" has joined.');
 
   res.send(block);
 });
@@ -57,13 +57,13 @@ server.post('/heartbeat', function(req, res) {
   var now = new Date();
   var worker = findWorker(req.body.workerId);
   if (worker) {
-      worker.lastHeartbeat = now;
-      worker.linesCompleted += abs(req.body.rangeEnd - req.body.rangeStart);
-      worker.lastLineCompleted = req.body.rangeEnd;
-      db.run("UPDATE names SET completed = 1 WHERE id >= " + req.body.rangeStart + " AND id < " + req.body.rangeEnd + ";");
-      res.send(1);
+    worker.lastHeartbeat = now;
+    worker.linesCompleted += Math.abs(req.body.rangeEnd - req.body.rangeStart);
+    worker.lastLineCompleted = req.body.rangeEnd;
+    server.db.run("UPDATE names SET completed = 1 WHERE id >= " + req.body.rangeStart + " AND id < " + req.body.rangeEnd + ";");
+    res.send("1");
   } else {
-    res.send(0);
+    res.send("0");
   }
 });
 

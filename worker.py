@@ -37,8 +37,9 @@ class Worker(object):
             "rangeEnd" : self.current_index
             })
         self.last_hb_index = self.current_index
-        req = urllib2.Request(address, data)
-        #response = urllib2.urlopen(req)
+        req = urllib2.Request(address, data, header)
+        response = urllib2.urlopen(req)
+        print(response.read())
         '''
         if response is normal: continue work
         if response is new "join_response" then start the new work
