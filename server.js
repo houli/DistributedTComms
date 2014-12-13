@@ -1,15 +1,22 @@
+var blocks = require('./blocks.js');
 var express = require('express');
 var server = express();
 var childprocess = require('child_process');
 var sqlite3 = require('sqlite3');
 var crypto = require('crypto');
-var db = null;
+server.db = null;
 server.use(require('body-parser').json());
 
-var workers = [];
+server.workers = [];
+server.unsentBlocks = [];
+
+server.databaseIndex = 0;
 
 childprocess.exec('python makedb.py', function(error, stdout, stderr) {
-  db = new sqlite3.Database('names.db');
+  server.db = new sqlite3.Database('names.db');
+  for (var i = 0; i < 10; i++) {
+    blocks.createBlock(server, i);
+  }
 });
 
 server.get('/', function(req, res) {
@@ -24,8 +31,7 @@ server.post('/join', function(req, res) {
   response.id = id;
   workers.push({
     id: id,
-    lastHeartbeat: new Date(),
-    blockId: null
+    lastHeartbeat: new Date()
   });
   res.send(response);
 });
