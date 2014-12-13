@@ -83,3 +83,16 @@ server.post('/completed', function(req, res) {
 var port = 3000;
 server.listen(port);
 console.log('Server listening on port ' + port);
+
+var deleteWorkers = function() {
+  for(int i = 0; i<server.workers.length; i++) {
+    var now = new Date();
+    var beat = server.workers[i].lastHeartbeat;
+
+    if (beat - now > 500) {
+      server.workers.splice(i,1);
+    }
+  }
+}
+
+setTimeout(deleteWorkers, 100);
