@@ -36,7 +36,7 @@ server.post('/join', function(req, res) {
   var block = server.unsentBlocks.pop();
   block.workerId = id;
   server.inProgressBlocks.push(block);
-  console.log(block);
+  block.nameToSearch = process.argv[1];
   res.send(block);
 });
 
