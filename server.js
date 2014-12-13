@@ -10,6 +10,7 @@ server.use(require('body-parser').json());
 server.workers = [];
 server.unsentBlocks = [];
 server.inProgressBlocks = [];
+var results = [];
 
 server.databaseIndex = 0;
 
@@ -31,6 +32,7 @@ server.post('/join', function(req, res) {
     lastHeartbeat: new Date(),
     linesCompleted: 0
   });
+
   if (server.unsentBlocks.length < 5) {
     blocks.createMoreBlocks(server);
   }
@@ -65,6 +67,16 @@ server.post('/heartbeat', function(req, res) {
   } else {
     res.send("0");
   }
+});
+
+server.post('/completed', function(req, res) {
+  // DO QUERY
+  for (var i = 0; i < req.body.results.length; i++) {
+    results.push(req.body.results[i]);
+    // Print about worker
+  }
+  // Update global stats
+  res.sendStatus(200);
 });
 
 
