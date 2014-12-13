@@ -1,4 +1,6 @@
 from random import randint
+from threading import Timer
+import time
 import urllib2
 import json
 
@@ -8,8 +10,7 @@ header = {'Content-Type': 'application/json'}
 class Worker(object):
 
     def __init__(self):
-        self.mips = randint(1000, 5000)
-        
+        self.mips = randint(1000, 5000)        
     
     def join(self):
 
@@ -26,10 +27,12 @@ class Worker(object):
         self.size = response["size"]
         self.target = response["nameToSearch"]
         self.results = []
+        self.hb_timer = Timer(0.1, self.send_heartbeat)
         self.work()
 
     def send_heartbeat(self):
         
+        print("sending hb")
         address = base_url + '/heartbeat'
         data = json.dumps({
             "workerId" : self.id,
@@ -39,33 +42,51 @@ class Worker(object):
         self.last_hb_index = self.current_index
         req = urllib2.Request(address, data, header)
         response = urllib2.urlopen(req)
-        print(response.read())
-        '''
-        if response is normal: continue work
-        if response is new "join_response" then start the new work
-        '''
+        response_code = int(response.read())
+        if response_code == 0:
+            self.join()
+        if self.current_index == self.start_index + self.size:
+            self.send_completed()
+        else:
+            self.hb_timer = Timer(0.1, self.send_heartbeat)
+            self.hb_timer.start()
 
     def work(self):
        
+        self.hb_timer.start()
         target = self.target
         for name in self.names:
             if name == target:
                 self.send_result()
             self.current_index += 1
-        self.send_heartbeat()
 
     def send_result(self):
 
         self.results.append(self.current_index)
         address = base_url + '/result'
         data = json.dumps({
-            "workerID" : self.id,
+            "workerId" : self.id,
             "index" : (self.current_index)
             })
         req = urllib2.Request(address, data, header)
 
     def send_completed(self):
-        print(self.results)
+        self.hb_timer = None
+        address = base_url + '/completed'
+        data = json.dumps({
+            "workerId" : self.id,
+            "results" : self.results
+            })
+        req = urllib2.Request(address, data, header)
+        while True:
+            try:
+                response = urllib2.urlopen(req, timeout = 1)
+            except urllib2.URLError, e:
+                response = urllib2.urlopen(req, timeout = 1)
+            break
+        
+        self.join()
+        
 
 w = Worker()
 w.join()
