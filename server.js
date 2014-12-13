@@ -85,12 +85,12 @@ server.listen(port);
 console.log('Server listening on port ' + port);
 
 var deleteWorkers = function() {
-  for(var i = 0; i<server.workers.length; i++) {
-    var now = new Date();
+  var now = new Date();
+  for (var i = 0; i < server.workers.length; i++) {
     var beat = server.workers[i].lastHeartbeat;
 
     if (beat - now > 500) {
-      server.workers.splice(i,1);
+      server.workers.splice(i, 1);
     }
   }
 }
