@@ -28,17 +28,45 @@ server.post('/join', function(req, res) {
   var id = crypto.randomBytes(20).toString('hex');
   server.workers.push({
     id: id,
-    lastHeartbeat: new Date()
+    lastHeartbeat: new Date(),
+    linesCompleted: 0
   });
   if (server.unsentBlocks.length < 5) {
     blocks.createMoreBlocks(server);
   }
   var block = server.unsentBlocks.pop();
   block.workerId = id;
-  server.inProgressBlocks.push(block);
   block.nameToSearch = process.argv[2];
+  server.inProgressBlocks.push(block);
+  console.log('Worker \"' + id + '\' has joined.');
+
   res.send(block);
 });
+
+
+var findWorker = function(workerId) {
+  for (var i = 0; i < server.workers.length; i++) {
+    if (server.workers[i].id == workerId) {
+      return server.workers[i];
+    }
+  }
+  return null;
+}
+
+server.post('/heartbeat', function(req, res) {
+  var now = new Date();
+  var worker = findWorker(req.body.workerId);
+  if (worker) {
+      worker.lastHeartbeat = now;
+      worker.linesCompleted += abs(req.body.rangeEnd - req.body.rangeStart);
+      worker.lastLineCompleted = req.body.rangeEnd;
+      db.run("UPDATE names SET completed = 1 WHERE id >= " + req.body.rangeStart + " AND id < " + req.body.rangeEnd + ";");
+      res.send(1);
+  } else {
+    res.send(0);
+  }
+});
+
 
 var port = 3000;
 server.listen(port);
