@@ -13,8 +13,8 @@ class Worker(object):
     def join(self):
 
         address = base_url + '/join'
-        data = json.dumps( {"mips" : self.mips})
-        req = urllib2.Request(address, data)
+        data = json.dumps({"mips" : self.mips})
+        req = urllib2.Request(address, data, {'Content-Type': 'application/json'})
         response = urllib2.urlopen(req)
         """
         extract json
