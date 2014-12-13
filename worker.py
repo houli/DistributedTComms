@@ -31,8 +31,7 @@ class Worker(object):
         self.work()
 
     def send_heartbeat(self):
-        
-        print("sending hb")
+
         address = base_url + '/heartbeat'
         data = json.dumps({
             "workerId" : self.id,
@@ -45,7 +44,7 @@ class Worker(object):
         response_code = int(response.read())
         if response_code == 0:
             self.join()
-        if self.current_index == self.start_index + self.size:
+        if self.current_index <= self.start_index + self.size:
             self.send_completed()
         else:
             self.hb_timer = Timer(0.1, self.send_heartbeat)
@@ -63,6 +62,7 @@ class Worker(object):
     def send_result(self):
 
         self.results.append(self.current_index)
+        print ("worker: %s \nindex: %d" %(self.id, self.current_index))
         address = base_url + '/result'
         data = json.dumps({
             "workerId" : self.id,
@@ -84,9 +84,4 @@ class Worker(object):
             except urllib2.URLError, e:
                 response = urllib2.urlopen(req, timeout = 1)
             break
-        
         self.join()
-        
-
-w = Worker()
-w.join()
