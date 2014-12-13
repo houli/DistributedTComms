@@ -9,31 +9,35 @@ server.use(require('body-parser').json());
 
 server.workers = [];
 server.unsentBlocks = [];
+server.inProgressBlocks = [];
 
 server.databaseIndex = 0;
 
 childprocess.exec('python makedb.py', function(error, stdout, stderr) {
   server.db = new sqlite3.Database('names.db');
-  for (var i = 0; i < 10; i++) {
-    blocks.createBlock(server, i);
-  }
+  blocks.createMoreBlocks(server);
 });
 
 server.get('/', function(req, res) {
-  res.send('Number of connected workers: ' + workers.length);
+  res.send('Number of connected workers: ' + server.workers.length);
 });
 
 server.post('/join', function(req, res) {
   var mips = req.body.mips;
-  var response = {};
 
   var id = crypto.randomBytes(20).toString('hex');
-  response.id = id;
-  workers.push({
+  server.workers.push({
     id: id,
     lastHeartbeat: new Date()
   });
-  res.send(response);
+  if (server.unsentBlocks.length < 5) {
+    blocks.createMoreBlocks(server);
+  }
+  var block = server.unsentBlocks.pop();
+  block.workerId = id;
+  server.inProgressBlocks.push(block);
+  console.log(block);
+  res.send(block);
 });
 
 var port = 3000;
