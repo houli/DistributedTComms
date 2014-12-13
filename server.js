@@ -85,7 +85,7 @@ server.listen(port);
 console.log('Server listening on port ' + port);
 
 var deleteWorkers = function() {
-  for(int i = 0; i<server.workers.length; i++) {
+  for(var i = 0; i<server.workers.length; i++) {
     var now = new Date();
     var beat = server.workers[i].lastHeartbeat;
 
