@@ -10,15 +10,24 @@ header = {'Content-Type': 'application/json'}
 class Worker(object):
 
     def __init__(self):
-        self.mips = randint(1000, 5000)        
+        self.mips = randint(1000, 5000)
+        self.id = None       
     
     def join(self):
 
         address = base_url + '/join'
-        data = json.dumps({"mips" : self.mips})
-        req = urllib2.Request(address, data, header)
-        response = json.loads(urllib2.urlopen(req).read())
-        
+        if self.id == None:
+            data = json.dumps({"mips" : self.mips})
+            req = urllib2.Request(address, data, header)
+            response = json.loads(urllib2.urlopen(req).read())
+        else:
+            data = json.dumps({
+                        "mips" : self.mips,
+                        "workerId" : self.id})
+            req = urllib2.Request(address, data, header)
+            response = json.loads(urllib2.urlopen(req).read())
+
+
         self.id = response["workerId"]
         self.names = response["names"]
         self.start_index = response["start"]
