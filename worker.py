@@ -16,16 +16,11 @@ class Worker(object):
     def join(self):
 
         address = base_url + '/join'
-        if self.id == None:
-            data = json.dumps({"mips" : self.mips})
-            req = urllib2.Request(address, data, header)
-            response = json.loads(urllib2.urlopen(req).read())
-        else:
-            data = json.dumps({
+        data = json.dumps({
                         "mips" : self.mips,
                         "workerId" : self.id})
-            req = urllib2.Request(address, data, header)
-            response = json.loads(urllib2.urlopen(req).read())
+        req = urllib2.Request(address, data, header)
+        response = json.loads(urllib2.urlopen(req).read())
 
 
         self.id = response["workerId"]
