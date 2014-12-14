@@ -17,3 +17,10 @@ if not isfile('names.db'):
 
     conn.commit()
     conn.close()
+else:
+    conn = sqlite3.connect('names.db')
+    cursor = conn.cursor()
+
+    cursor.execute('UPDATE names SET completed = 0 WHERE id >= 0')
+    conn.commit()
+    conn.close()
