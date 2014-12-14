@@ -1,5 +1,6 @@
 from random import randint
 from threading import Timer
+import sys
 import time
 import urllib2
 import json
@@ -21,18 +22,19 @@ class Worker(object):
                         "workerId" : self.id})
         req = urllib2.Request(address, data, header)
         response = json.loads(urllib2.urlopen(req).read())
-
-
-        self.id = response["workerId"]
-        self.names = response["names"]
-        self.start_index = response["start"]
-        self.current_index = self.start_index
-        self.last_hb_index = self.current_index
-        self.size = response["size"]
-        self.target = response["nameToSearch"]
-        self.results = []
-        self.hb_timer = Timer(0.1, self.send_heartbeat)
-        self.work()
+        if not type(response) == dict :
+            sys.exit()
+        else:
+            self.id = response["workerId"]
+            self.names = response["names"]
+            self.start_index = response["start"]
+            self.current_index = self.start_index
+            self.last_hb_index = self.current_index
+            self.size = response["size"]
+            self.target = response["nameToSearch"]
+            self.results = []
+            self.hb_timer = Timer(0.1, self.send_heartbeat)
+            self.work()
 
     def send_heartbeat(self):
 
@@ -77,9 +79,12 @@ class Worker(object):
     def send_completed(self):
         self.hb_timer = None
         address = base_url + '/completed'
+        print("completed block: %d" %(self.start_index))
         data = json.dumps({
             "workerId" : self.id,
-            "results" : self.results
+            "results" : self.results,
+            "blockStart" : self.start_index,
+            "blockSize" : self.size
             })
         req = urllib2.Request(address, data, header)
         while True:
