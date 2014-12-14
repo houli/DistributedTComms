@@ -17,8 +17,14 @@ var finished = false;
 server.databaseIndex = 0;
 
 childprocess.exec('python makedb.py', function(error, stdout, stderr) {
+  console.log("db made")
   server.db = new sqlite3.Database('names.db');
-  blocks.createMoreBlocks(server);
+  server.db.get("SELECT id FROM names ORDER BY id DESC LIMIT 1;", function(err, row) {
+    server.dbSize = row.id;
+    blocks.createMoreBlocks(server, function() {
+      console.log('Server listening on port ' + port);
+    });
+  });
 });
 
 server.get('/', function(req, res) {
@@ -45,10 +51,13 @@ server.post('/join', function(req, res) {
     } else {
       var id = crypto.randomBytes(20).toString('hex');
     }
-    server.workers.push({
-      id: id,
-      lastHeartbeat: new Date()
-    });
+    if (!findWorker(id)) {
+      server.workers.push({
+        id: id,
+        lastHeartbeat: new Date()
+      });
+    }
+
     if (!findWorkerStats(id)) {
       workerStats.push({
         id: id,
@@ -57,16 +66,27 @@ server.post('/join', function(req, res) {
       });
     }
 
-    if (server.unsentBlocks.length < 5) {
-      blocks.createMoreBlocks(server);
+    if (server.unsentBlocks.length < 75) {
+      blocks.createMoreBlocks(server, function() {
+        var block = server.unsentBlocks.pop();
+        if (!block) {
+          res.send("0")
+        } else {
+          block.workerId = id;
+          block.nameToSearch = process.argv[2];
+          server.inProgressBlocks.push(block);
+          console.log('Worker \"' + id + '\" has joined.');
+          res.send(block);
+        }
+      });
+    } else {
+      var block = server.unsentBlocks.pop();
+      block.workerId = id;
+      block.nameToSearch = process.argv[2];
+      server.inProgressBlocks.push(block);
+      console.log('Worker \"' + id + '\" has joined.');
+      res.send(block);
     }
-    var block = server.unsentBlocks.pop();
-    block.workerId = id;
-    block.nameToSearch = process.argv[2];
-    server.inProgressBlocks.push(block);
-    console.log('Worker \"' + id + '\" has joined.');
-
-    res.send(block);
   }
 
 });
@@ -133,7 +153,6 @@ server.post('/completed', function(req, res) {
 
 var port = 3000;
 server.listen(port);
-console.log('Server listening on port ' + port);
 
 var deleteWorkers = function() {
   var now = new Date();
@@ -146,4 +165,4 @@ var deleteWorkers = function() {
   }
 }
 
-setTimeout(deleteWorkers, 100);
+setInterval(deleteWorkers, 100);

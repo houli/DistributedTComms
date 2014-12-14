@@ -12,15 +12,8 @@ if not isfile('names.db'):
     for i, line in enumerate(file):
         line = line.rstrip()
         cursor.execute('INSERT INTO names(name, completed) VALUES (?, ?) ', (line, 0))
-        if i % 100000 == 0:
+        if i % 1000000 == 0:
             conn.commit()
 
-    conn.commit()
-    conn.close()
-else:
-    conn = sqlite3.connect('names.db')
-    cursor = conn.cursor()
-
-    cursor.execute('UPDATE names SET completed = 0 WHERE id >= 0')
     conn.commit()
     conn.close()

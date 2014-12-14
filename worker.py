@@ -21,8 +21,9 @@ class Worker(object):
                         "mips" : self.mips,
                         "workerId" : self.id})
         req = urllib2.Request(address, data, header)
-        response = json.loads(urllib2.urlopen(req).read())
+        response = json.loads(urllib2.urlopen(req, timeout=40).read())
         if not type(response) == dict :
+            print("exit")
             sys.exit()
         else:
             self.id = response["workerId"]
@@ -60,8 +61,8 @@ class Worker(object):
        
         self.hb_timer.start()
         target = self.target
-        for name in self.names:
-            if name == target:
+        for row in self.names:
+            if row["name"] == target:
                 self.send_result()
             self.current_index += 1
 

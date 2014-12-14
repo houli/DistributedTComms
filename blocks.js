@@ -1,23 +1,36 @@
+var blockSize = 1000;
+var numOfBlocks = 100;
 module.exports = {
-  createBlock: function(server, startIndex, i) {
-    var index = startIndex + i * 50;
-    var select = "SELECT name FROM names WHERE id >= " + index + " AND id < " + (index + 50) + ";";
+  createBlock: function(server, startIndex, i, callback) {
+    var index = startIndex + i * blockSize;
+    var select = "SELECT name FROM names WHERE id >= " + index + " AND id < " + (index + blockSize) + ";";
     var resultSet = {
       names: [],
       start: index,
-      size: 50
+      size: blockSize
     };
-    server.db.each(select, function(err, row) {
-      resultSet.names.push(row.name);
-    }, function() {
+    server.db.all(select, function(err, rows) {
+      resultSet.names = rows;
       server.unsentBlocks.push(resultSet);
+      callback();
     });
   },
-  createMoreBlocks: function(server) {
-    var startIndex = server.databaseIndex;
-    server.databaseIndex += 500;
-    for (var i = 0; i < 10; i++) {
-      this.createBlock(server, startIndex, i);
+  createMoreBlocks: function(server, callback) {
+    if (server.databaseIndex < server.dbSize) {
+      var startIndex = server.databaseIndex;
+      server.databaseIndex += numOfBlocks * blockSize;
+      var callbackCount = 0;
+      for (var i = 0; i < numOfBlocks; i++) {
+        this.createBlock(server, startIndex, i, function() {
+          callbackCount++;
+          if (callbackCount === numOfBlocks) {
+            callback();
+          }
+        });
+      }
+    }
+    else {
+      callback();
     }
   }
 };
