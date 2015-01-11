@@ -156,6 +156,9 @@ server.post('/completed', function(req, res) {
   res.sendStatus(200);
 });
 
+server.post('/result', function(req, res) {
+  res.sendStatus(200);
+});
 
 var port = 3000;
 server.listen(port);

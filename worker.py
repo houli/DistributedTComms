@@ -12,8 +12,17 @@ class Worker(object):
 
     def __init__(self):
         self.mips = randint(1000, 5000)
-        self.id = None       
-    
+        self.id = None
+        self.rejoined = False
+
+    def start(self):
+        while(True):
+            self.join()
+            self.work()
+            if not self.rejoined:
+                self.send_completed()
+            self.rejoined = False
+
     def join(self):
 
         address = base_url + '/join'
@@ -21,21 +30,24 @@ class Worker(object):
                         "mips" : self.mips,
                         "workerId" : self.id})
         req = urllib2.Request(address, data, header)
-        response = json.loads(urllib2.urlopen(req, timeout=40).read())
-        if not type(response) == dict :
+        response = urllib2.urlopen(req)
+
+        data = json.loads(response.read())
+        if not type(data) == dict :
             print("exit")
+            response.close()
             sys.exit()
         else:
-            self.id = response["workerId"]
-            self.names = response["names"]
-            self.start_index = response["start"]
+            self.id = data["workerId"]
+            self.names = data["names"]
+            self.start_index = data["start"]
             self.current_index = self.start_index
             self.last_hb_index = self.current_index
-            self.size = response["size"]
-            self.target = response["nameToSearch"]
+            self.size = data["size"]
+            self.target = data["nameToSearch"]
             self.results = []
             self.hb_timer = Timer(0.1, self.send_heartbeat)
-            self.work()
+            response.close()
 
     def send_heartbeat(self):
 
@@ -49,9 +61,11 @@ class Worker(object):
         req = urllib2.Request(address, data, header)
         response = urllib2.urlopen(req)
         response_code = int(response.read())
+        response.close()
         if response_code == 0:
             self.join()
-        if self.current_index <= self.start_index + self.size:
+            self.rejoined = True
+        if self.current_index >= self.start_index + self.size:
             self.send_completed()
         else:
             self.hb_timer = Timer(0.1, self.send_heartbeat)
@@ -65,6 +79,7 @@ class Worker(object):
             if row["name"] == target:
                 self.send_result()
             self.current_index += 1
+        return True
 
     def send_result(self):
 
@@ -76,6 +91,8 @@ class Worker(object):
             "index" : (self.current_index)
             })
         req = urllib2.Request(address, data, header)
+        response = urllib2.urlopen(req)
+        response.close()
 
     def send_completed(self):
         self.hb_timer = None
@@ -88,10 +105,5 @@ class Worker(object):
             "blockSize" : self.size
             })
         req = urllib2.Request(address, data, header)
-        while True:
-            try:
-                response = urllib2.urlopen(req, timeout = 1)
-            except urllib2.URLError, e:
-                response = urllib2.urlopen(req, timeout = 1)
-            break
-        self.join()
+        response = urllib2.urlopen(req)
+        response.close()
