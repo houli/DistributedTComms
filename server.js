@@ -5,6 +5,8 @@ var childprocess = require('child_process');
 var sqlite3 = require('sqlite3');
 var crypto = require('crypto');
 server.db = null;
+server.set('views', __dirname + '/views');
+server.set('view engine', 'ejs');
 server.use(require('body-parser').json());
 
 server.workers = [];
@@ -28,7 +30,11 @@ childprocess.exec('python makedb.py', function(error, stdout, stderr) {
 });
 
 server.get('/', function(req, res) {
-  res.send('Number of connected workers: ' + server.workers.length);
+  res.render('stats', {
+    connectedWorkers: server.workers.length,
+    results: results,
+    workerStats: workerStats
+  });
 });
 
 
@@ -159,7 +165,7 @@ var deleteWorkers = function() {
   for (var i = 0; i < server.workers.length; i++) {
     var beat = server.workers[i].lastHeartbeat;
 
-    if (beat - now > 500) {
+    if (now - beat > 500) {
       server.workers.splice(i, 1);
     }
   }

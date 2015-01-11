@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Team Unicorn Telecomms Project</title>
+  </head>
+  <body>
+    <table>
+      <tbody>
+        <tr>
+          <th>Number of Connected Workers</th>
+          <th>Total Workers This Session</th>
+          <th>Percent Completed</th>
+        </tr>
+        <tr>
+          <td><%= connectedWorkers %></td>
+          <td>Blah</td>
+          <td>Blah</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><%= results %></p>
+    <ul><% for (var i = 0; i < workerStats.length; i++) { %>
+          <li><%= workerStats[i].id %>: <%= workerStats[i].linesCompleted %> lines.</li>
+    <% } %>
+    </ul>
+  </body>
+</html>
