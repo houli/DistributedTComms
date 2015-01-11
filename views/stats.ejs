@@ -18,10 +18,19 @@
         </tr>
       </tbody>
     </table>
-    <p><%= results %></p>
-    <ul><% workerStats.forEach(function(value, key) { %>
-          <li><%= key %>: <%= value.linesCompleted %> lines.</li>
-    <% }) %>
-    </ul>
+    <table>
+      <tbody>
+        <tr>
+          <th>Worker id</th>
+          <th>Lines Completed</th>
+          <th>Results Found</th>
+        </tr>
+        <% workerStats.forEach(function(value, key) { %>
+        <tr>
+          <td><%= key %></td>
+          <td><%= value.linesCompleted %></td>
+          <td><%= value.resultsFound %></td>
+        </tr>
+        <% }) %>
   </body>
 </html>

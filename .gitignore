@@ -1,4 +1,5 @@
 names.txt
-names.db
 node_modules/
 *.pyc
+.DS_Store
+files/

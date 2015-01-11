@@ -1,32 +1,39 @@
-var blocks = require('./blocks.js');
-var express = require('express');
-var server = express();
 var childprocess = require('child_process');
-var sqlite3 = require('sqlite3');
+var fs = require('fs');
 var HashMap = require('hashmap').HashMap;
 var crypto = require('crypto');
-server.db = null;
+
+// Configure server and middleware
+var express = require('express');
+var server = express();
+var compression = require('compression');
 server.set('views', __dirname + '/views');
 server.set('view engine', 'ejs');
 server.use(require('body-parser').json());
+server.use(compression());
+server.use('/files', express.static('files'));
 
+// Initalise server
 server.workers = new HashMap();
-server.unsentBlocks = [];
-server.inProgressBlocks = [];
+
 var results = [];
 var workerStats = new HashMap();
 var finished = false;
 
-server.databaseIndex = 0;
+childprocess.exec('python file_maker.py', function(error, stdout, stderr) {
+  console.log("Files made");
+  fs.readFile('files/numfile.txt', 'utf8', function(err, data) {
+    server.numFiles = parseInt(data, 10);
 
-childprocess.exec('python makedb.py', function(error, stdout, stderr) {
-  console.log("db made");
-  server.db = new sqlite3.Database('names.db');
-  server.db.get("SELECT id FROM names ORDER BY id DESC LIMIT 1;", function(err, row) {
-    server.dbSize = row.id;
-    blocks.createMoreBlocks(server, function() {
-      console.log('Server listening on port ' + port);
-    });
+    var port = 3000;
+    server.listen(port);
+    console.log("Server listening on port " + port);
+
+    server.unsentFiles = new Array(server.numFiles);
+    server.inProgressFiles = [];
+    for (var i = 0; i < server.unsentFiles.length; i++) {
+      server.unsentFiles[i] = { fileNumber: i, completed: 0 };
+    }
   });
 });
 
@@ -60,27 +67,18 @@ server.post('/join', function(req, res) {
     if (!findWorkerStats(id)) {
       workerStats.set(id, { linesCompleted: 0, resultsFound: 0});
     }
-
-    if (server.unsentBlocks.length < 75) {
-      blocks.createMoreBlocks(server, function() {
-        var block = server.unsentBlocks.pop();
-        if (!block) {
-          res.send("0")
-        } else {
-          block.workerId = id;
-          block.nameToSearch = process.argv[2];
-          server.inProgressBlocks.push(block);
-          console.log('Worker \"' + id + '\" has joined.');
-          res.send(block);
-        }
+    var fileInfo = server.unsentFiles.pop();
+    if (fileInfo) {
+      server.inProgressFiles.push(fileInfo);
+      res.send({
+        workerId: id,
+        nameToSearch: process.argv[2],
+        fileNumber: fileInfo.fileNumber,
+        linesCompleted: fileInfo.completed
       });
-    } else {
-      var block = server.unsentBlocks.pop();
-      block.workerId = id;
-      block.nameToSearch = process.argv[2];
-      server.inProgressBlocks.push(block);
       console.log('Worker \"' + id + '\" has joined.');
-      res.send(block);
+    } else {
+      res.send("0");
     }
   }
 
@@ -105,9 +103,9 @@ server.post('/heartbeat', function(req, res) {
   }
 });
 
-var findBlock = function(workerId) {
-  for (var i = 0; i < server.inProgressBlocks.length; i++) {
-    if (server.inProgressBlocks[i].workerId == workerId) {
+var findFile = function(fileNumber) {
+  for (var i = 0; i < server.inProgressFiles.length; i++) {
+    if (server.inProgressFiles[i].fileNumber === fileNumber) {
       return i;
     }
   }
@@ -117,16 +115,12 @@ var findBlock = function(workerId) {
 server.post('/completed', function(req, res) {
   var start = req.body.blockStart;
   var size = req.body.blockSize;
-  server.db.run("UPDATE names SET completed = 1 WHERE id >= " + start + " AND id < " + (start + size) + ";", function() {
-    server.db.get("SELECT name FROM names WHERE completed = 0 limit 1;", function(err, row) {
-      if (typeof(row) === 'undefined') {
-        finished = true;
-      }
-    });
-  });
-  var blockIndex = findBlock(req.body.workerId);
-  if (blockIndex != -1) {
-    server.inProgressBlocks.splice(blockIndex, 1);
+  if (server.unsentFiles.length === 0) {
+    finished = true;
+  }
+  var fileIndex = parseInt(findFile(req.body.fileNumber), 10);
+  if (fileIndex != -1) {
+    server.inProgressFiles.splice(fileIndex, 1);
   }
 
   for (var i = 0; i < req.body.results.length; i++) {
@@ -142,9 +136,6 @@ server.post('/completed', function(req, res) {
 server.post('/result', function(req, res) {
   res.sendStatus(200);
 });
-
-var port = 3000;
-server.listen(port);
 
 var deleteWorkers = function() {
   var now = new Date();
