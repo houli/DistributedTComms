@@ -19,9 +19,9 @@
       </tbody>
     </table>
     <p><%= results %></p>
-    <ul><% for (var i = 0; i < workerStats.length; i++) { %>
-          <li><%= workerStats[i].id %>: <%= workerStats[i].linesCompleted %> lines.</li>
-    <% } %>
+    <ul><% workerStats.forEach(function(value, key) { %>
+          <li><%= key %>: <%= value.linesCompleted %> lines.</li>
+    <% }) %>
     </ul>
   </body>
 </html>

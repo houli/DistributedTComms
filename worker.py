@@ -46,7 +46,7 @@ class Worker(object):
             self.size = data["size"]
             self.target = data["nameToSearch"]
             self.results = []
-            self.hb_timer = Timer(0.1, self.send_heartbeat)
+            self.hb_timer = Timer(5, self.send_heartbeat)
             response.close()
 
     def send_heartbeat(self):
@@ -68,7 +68,7 @@ class Worker(object):
         if self.current_index >= self.start_index + self.size:
             self.send_completed()
         else:
-            self.hb_timer = Timer(0.1, self.send_heartbeat)
+            self.hb_timer = Timer(5, self.send_heartbeat)
             self.hb_timer.start()
 
     def work(self):
