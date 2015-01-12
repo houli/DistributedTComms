@@ -28,8 +28,7 @@ class Worker(object):
     def join(self):
 
         address = base_url + '/join'
-        data = json.dumps({
-                        "mips" : self.mips,
+        data = json.dumps(
                         "workerId" : self.id})
         req = urllib2.Request(address, data, header)
         response = urllib2.urlopen(req)
