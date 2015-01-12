@@ -32,8 +32,7 @@ class Worker(object):
     def join(self):
 
         address = base_url + '/join'
-        data = json.dumps(
-                        "workerId" : self.id})
+        data = json.dumps({"workerId" : self.id})
         req = urllib2.Request(address, data, header)
         response = urllib2.urlopen(req)
 
@@ -46,7 +45,7 @@ class Worker(object):
             self.id = data["workerId"]
             self.file_number = data["fileNumber"]
             self.file_lines_completed = data["linesCompleted"]
-            self.target = data["nameToSearch"]
+            self.targets = data["namesToSearch"]
             self.results = []
             self.current_index = 0
             self.last_hb_index = self.current_index
@@ -83,19 +82,20 @@ class Worker(object):
             self.rejoined = True
 
     def work(self):
-        target = self.target
+        targets = self.targets
         for name in self.names:
-            if name.rstrip() == target:
-                self.record_result()
+            for target in targets:
+                if name.rstrip() == target:
+                    self.record_result(target)
             self.current_index += 1
             if self.current_index % 100000 == 0:
                 self.send_heartbeat()
         return True
 
-    def record_result(self):
-
-        self.results.append(self.current_index)
-        print("worker: %s \nindex: %d" %(self.id, self.current_index))
+    def record_result(self, target):
+        self.results.append({"index" : self.current_index,
+                            "name" : target})
+        print("worker: %s \ntarget: %s index: %d" %(self.id, target, self.current_index))
 
     def send_completed(self):
         address = base_url + '/completed'
@@ -108,3 +108,4 @@ class Worker(object):
         req = urllib2.Request(address, data, header)
         response = urllib2.urlopen(req)
         response.close()
+        self.send_heartbeat()

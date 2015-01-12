@@ -27,5 +27,4 @@ def make_threads():
 
 for i in range(multiprocessing.cpu_count()):
     process = multiprocessing.Process(target=make_threads)
-    jobs.append(process)
     process.start()

@@ -8,13 +8,11 @@
       <tbody>
         <tr>
           <th>Number of Connected Workers</th>
-          <th>Total Workers This Session</th>
           <th>Percent Completed</th>
         </tr>
         <tr>
           <td><%= connectedWorkers %></td>
-          <td>Blah</td>
-          <td>Blah</td>
+          <td><%= Math.floor((linesCompleted / totalLines) * 100) %>%</td>
         </tr>
       </tbody>
     </table>
@@ -23,14 +21,24 @@
         <tr>
           <th>Worker id</th>
           <th>Lines Completed</th>
+          <th>Time spent working</th>
           <th>Results Found</th>
         </tr>
         <% workerStats.forEach(function(value, key) { %>
         <tr>
           <td><%= key %></td>
           <td><%= value.linesCompleted %></td>
+          <td><%= (value.lastHeartbeat - value.joinTime) / 1000 %> seconds</td>
           <td><%= value.resultsFound %></td>
         </tr>
         <% }) %>
+      </tbody>
+    </table>
+    <% if (results.length > 0) { %><h2>Results</h2> <% } %>
+    <ul>
+      <% for (var i = 0; i < results.length; i++) { %>
+      <li>Name: <%= results[i].name %>, Line: <%= results[i].index %></li>
+      <% } %>
+    </ul>
   </body>
 </html>

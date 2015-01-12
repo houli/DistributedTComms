@@ -3,10 +3,12 @@
 # Emmet Broaders 13321123
 
 import os
+import json
 lines_per_file = 1000000
 lines = []
 lines_counter = 0
 created_files = 0
+total_lines = 0
 
 with open('names.txt') as big_file:
     if not os.path.exists('files'):
@@ -14,6 +16,7 @@ with open('names.txt') as big_file:
         for line in big_file:
             lines.append(line)
             lines_counter += 1
+            total_lines += 1
             if lines_counter == lines_per_file:
                 idx = created_files
                 with open('files/%s.txt' % idx, 'w') as small_file:
@@ -29,7 +32,10 @@ with open('names.txt') as big_file:
             created_files += 1
         
         file = open('files/numfile.txt', 'w')
-        file.write(str(created_files))
-        file.write('\n')
+        file.write(json.dumps({
+            "numFiles": created_files,
+            "linesPerFile": lines_per_file,
+            "totalLines": total_lines
+            }))
         file.flush()
         file.close()

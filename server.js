@@ -19,23 +19,28 @@ server.use(require('body-parser').json());
 server.use(compression());
 server.use('/files', express.static('files'));
 
-// Initalise server
+// Initialise server
 server.workers = new HashMap();
+server.totalLinesCompleted = 0;
+var namesToSearch = [];
 
 var results = [];
 var workerStats = new HashMap();
 var finished = false;
 
 childprocess.exec('python file_maker.py', function(error, stdout, stderr) {
+  for (var i = 2; i < process.argv.length; i++) {
+    namesToSearch.push(process.argv[i]);
+  }
   console.log("Files made");
   fs.readFile('files/numfile.txt', 'utf8', function(err, data) {
-    server.numFiles = parseInt(data, 10);
+    server.config = JSON.parse(data);
 
     var port = 3000;
     server.listen(port);
     console.log("Server listening on port " + port);
 
-    server.unsentFiles = new Array(server.numFiles);
+    server.unsentFiles = new Array(server.config.numFiles);
     server.inProgressFiles = [];
     for (var i = 0; i < server.unsentFiles.length; i++) {
       server.unsentFiles[i] = { fileNumber: i, completed: 0 };
@@ -47,14 +52,17 @@ server.get('/', function(req, res) {
   res.render('stats', {
     connectedWorkers: server.workers.count(),
     results: results,
-    workerStats: workerStats
+    workerStats: workerStats,
+    linesCompleted: server.totalLinesCompleted,
+    totalLines: server.config.totalLines,
+    results: results
   });
 });
 
 
 var findWorkerStats = function(workerId) {
   return workerStats.get(workerId) || null;
-}
+};
 
 server.post('/join', function(req, res) {
   if (finished) {
@@ -66,18 +74,23 @@ server.post('/join', function(req, res) {
       var id = crypto.randomBytes(20).toString('hex');
     }
     if (!findWorker(id)) {
-      server.workers.set(id, { lastHeartbeat: new Date() });
+      server.workers.set(id, { lastHeartbeat: new Date(), joinTime: new Date() });
     }
 
     if (!findWorkerStats(id)) {
-      workerStats.set(id, { linesCompleted: 0, resultsFound: 0});
+      workerStats.set(id, {
+        linesCompleted: 0,
+        resultsFound: 0,
+        lastHeartbeat: new Date(),
+        joinTime: new Date()
+      });
     }
     var fileInfo = server.unsentFiles.pop();
     if (fileInfo) {
       server.inProgressFiles.push(fileInfo);
       res.send({
         workerId: id,
-        nameToSearch: process.argv[2],
+        namesToSearch: namesToSearch,
         fileNumber: fileInfo.fileNumber,
         linesCompleted: fileInfo.completed
       });
@@ -92,15 +105,18 @@ server.post('/join', function(req, res) {
 
 var findWorker = function(workerId) {
   return server.workers.get(workerId) || null;
-}
+};
 
 server.post('/heartbeat', function(req, res) {
   var now = new Date();
   var worker = findWorker(req.body.workerId);
   if (worker) {
     worker.lastHeartbeat = now;
+    workerStats.get(req.body.workerId).lastHeartbeat = now;
     var stats = findWorkerStats(req.body.workerId);
-    stats.linesCompleted += Math.abs(req.body.rangeEnd - req.body.rangeStart);
+    var newLines = Math.abs(req.body.rangeEnd - req.body.rangeStart);
+    stats.linesCompleted += newLines;
+    server.totalLinesCompleted += newLines;
     worker.lastLineCompleted = req.body.rangeEnd;
     res.send("1");
   } else {
@@ -115,7 +131,7 @@ var findFile = function(fileNumber) {
     }
   }
   return -1;
-}
+};
 
 server.post('/completed', function(req, res) {
   var start = req.body.blockStart;
@@ -123,22 +139,23 @@ server.post('/completed', function(req, res) {
   if (server.unsentFiles.length === 0) {
     finished = true;
   }
-  var fileIndex = parseInt(findFile(req.body.fileNumber), 10);
+  var fileIndex = findFile(req.body.fileNumber);
   if (fileIndex != -1) {
     server.inProgressFiles.splice(fileIndex, 1);
   }
 
   for (var i = 0; i < req.body.results.length; i++) {
-    results.push(req.body.results[i]);
-    console.log('Worker \"' + req.body.workerId + '\" has found a result at line ' + req.body.results[i]);
+    var curResult = (req.body.fileNumber * server.config.linesPerFile) + req.body.results[i].index;
+    var name = req.body.results[i].name;
+    results.push({
+      lineNumber: curResult,
+      name: name
+    });
+    console.log('Worker \"' + req.body.workerId + '\" has found ' + name + ' at line ' + curResult);
   }
   var stats = findWorkerStats(req.body.workerId);
   stats.resultsFound += req.body.results.length;
 
-  res.sendStatus(200);
-});
-
-server.post('/result', function(req, res) {
   res.sendStatus(200);
 });
 
