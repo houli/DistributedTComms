@@ -1,3 +1,9 @@
+/*
+** Eoin Houlihan 13323304
+** Conor Brennan 13327472
+** Emmet Broaders 13321123
+*/
+
 var childprocess = require('child_process');
 var fs = require('fs');
 var HashMap = require('hashmap').HashMap;

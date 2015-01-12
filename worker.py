@@ -1,3 +1,7 @@
+# Eoin Houlihan 13323304
+# Conor Brennan 13327472
+# Emmet Broaders 13321123
+
 from random import randint
 import sys
 import time
