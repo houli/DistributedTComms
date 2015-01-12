@@ -5,13 +5,18 @@ To run our implementation you will need to
 install Node.js. This can be found here :
 	http://nodejs.org/
 After installing node, open the directory for our
-programm and run "nom install".
+programm and run "npm install".
 You will also need to have python 2.7. You can find
 the executable for your platform here:
 	https://www.python.org/downloads/
 
+We didn't want to include the data set in this repo 
+so you must add the data set to the directory containing the program.
+This data set should be named:
+	'names.txt'
 After you have npm installed, and installed python
-2.7.x you can run our program by following these instructions.
+2.7.x, and added the data set you can run our program by following 
+these instructions.
 
 1. Go to the directory in your command line
 2. run "node server.js '[target name]' '[target name]'"
