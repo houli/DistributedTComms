@@ -1,3 +1,7 @@
+# Eoin Houlihan 13323304
+# Conor Brennan 13327472
+# Emmet Broaders 13321123
+
 from worker import *
 import threading
 import multiprocessing
@@ -21,7 +25,6 @@ def make_threads():
             if t.is_alive():
                 done = False
 
-jobs = []
 for i in range(multiprocessing.cpu_count()):
     process = multiprocessing.Process(target=make_threads)
     jobs.append(process)

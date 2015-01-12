@@ -1,3 +1,7 @@
+# Eoin Houlihan 13323304
+# Conor Brennan 13327472
+# Emmet Broaders 13321123
+
 import os
 lines_per_file = 1000000
 lines = []
