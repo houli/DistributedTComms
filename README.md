@@ -30,3 +30,7 @@ After you have npm installed, and installed python
 6. Open a web browser at 'http://localhost:3000'.
    Stats for the ongoing work can be found here. Refresh the page as
    the workers do work to update the stats.
+
+If you wish to stop the program at any time go to the command line
+in which "server.js" is running and press 'ctrl + c'. This in turn
+will kill the worker processes.
