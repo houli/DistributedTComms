@@ -83,24 +83,16 @@ class Worker(object):
         target = self.target
         for name in self.names:
             if name.rstrip() == target:
-                self.send_result()
+                self.record_result()
             self.current_index += 1
             if self.current_index % 100000 == 0:
                 self.send_heartbeat()
         return True
 
-    def send_result(self):
+    def record_result(self):
 
         self.results.append(self.current_index)
         print("worker: %s \nindex: %d" %(self.id, self.current_index))
-        address = base_url + '/result'
-        data = json.dumps({
-            "workerId" : self.id,
-            "index" : (self.current_index)
-            })
-        req = urllib2.Request(address, data, header)
-        response = urllib2.urlopen(req)
-        response.close()
 
     def send_completed(self):
         address = base_url + '/completed'
