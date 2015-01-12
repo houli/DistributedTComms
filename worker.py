@@ -19,6 +19,7 @@ class Worker(object):
         self.mips = randint(1000, 5000)
         self.id = None
         self.rejoined = False
+        self.lines_completed = 0
 
     def start(self):
         while(True):
@@ -70,7 +71,8 @@ class Worker(object):
         data = json.dumps({
             "workerId" : self.id,
             "rangeStart" : self.last_hb_index,
-            "rangeEnd" : self.current_index
+            "rangeEnd" : self.current_index,
+            "linesCompleted" : self.lines_completed
             })
         self.last_hb_index = self.current_index
         req = urllib2.Request(address, data, header)
@@ -88,6 +90,7 @@ class Worker(object):
                 if name.rstrip() == target:
                     self.record_result(target)
             self.current_index += 1
+            self.lines_completed += 1
             if self.current_index % 100000 == 0:
                 self.send_heartbeat()
         return True

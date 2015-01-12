@@ -21,7 +21,6 @@ server.use('/files', express.static('files'));
 
 // Initialise server
 server.workers = new HashMap();
-server.totalLinesCompleted = 0;
 var namesToSearch = [];
 
 var results = [];
@@ -41,19 +40,27 @@ childprocess.exec('python file_maker.py', function(error, stdout, stderr) {
     console.log("Server listening on port " + port);
 
     server.unsentFiles = new Array(server.config.numFiles);
-    server.inProgressFiles = [];
+    server.inProgressFiles = new HashMap();
     for (var i = 0; i < server.unsentFiles.length; i++) {
-      server.unsentFiles[i] = { fileNumber: i, completed: 0 };
+      server.unsentFiles[i] = {
+        fileNumber: i,
+        completed: 0
+      };
     }
   });
 });
 
 server.get('/', function(req, res) {
+  var count = 0;
+  workerStats.forEach(function(value, key) {
+    count += value.linesCompleted;
+  });
+
   res.render('stats', {
     connectedWorkers: server.workers.count(),
     results: results,
     workerStats: workerStats,
-    linesCompleted: server.totalLinesCompleted,
+    linesCompleted: count,
     totalLines: server.config.totalLines,
     results: results
   });
@@ -87,14 +94,14 @@ server.post('/join', function(req, res) {
     }
     var fileInfo = server.unsentFiles.pop();
     if (fileInfo) {
-      server.inProgressFiles.push(fileInfo);
+      server.inProgressFiles.set(id, fileInfo);
       res.send({
         workerId: id,
         namesToSearch: namesToSearch,
         fileNumber: fileInfo.fileNumber,
         linesCompleted: fileInfo.completed
       });
-      console.log('Worker \"' + id + '\" has joined.');
+      console.log('Sent file ' + fileInfo.fileNumber + ' to worker \"' + id + '\"');
     } else {
       res.send("0");
     }
@@ -115,8 +122,7 @@ server.post('/heartbeat', function(req, res) {
     workerStats.get(req.body.workerId).lastHeartbeat = now;
     var stats = findWorkerStats(req.body.workerId);
     var newLines = Math.abs(req.body.rangeEnd - req.body.rangeStart);
-    stats.linesCompleted += newLines;
-    server.totalLinesCompleted += newLines;
+    stats.linesCompleted = req.body.linesCompleted;
     worker.lastLineCompleted = req.body.rangeEnd;
     res.send("1");
   } else {
@@ -124,25 +130,13 @@ server.post('/heartbeat', function(req, res) {
   }
 });
 
-var findFile = function(fileNumber) {
-  for (var i = 0; i < server.inProgressFiles.length; i++) {
-    if (server.inProgressFiles[i].fileNumber === fileNumber) {
-      return i;
-    }
-  }
-  return -1;
-};
-
 server.post('/completed', function(req, res) {
   var start = req.body.blockStart;
   var size = req.body.blockSize;
   if (server.unsentFiles.length === 0) {
     finished = true;
   }
-  var fileIndex = findFile(req.body.fileNumber);
-  if (fileIndex != -1) {
-    server.inProgressFiles.splice(fileIndex, 1);
-  }
+  server.inProgressFiles.remove(req.body.workerId);
 
   for (var i = 0; i < req.body.results.length; i++) {
     var curResult = (req.body.fileNumber * server.config.linesPerFile) + req.body.results[i].index;
@@ -169,6 +163,9 @@ var deleteWorkers = function() {
   });
   for (var i = 0; i < toDelete.length; i++) {
     server.workers.remove(toDelete[i]);
+    var file = server.inProgressFiles.get(toDelete[i]);
+    server.inProgressFiles.remove(toDelete[i]);
+    server.unsentFiles.push(file);
   }
 };
 
