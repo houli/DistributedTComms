@@ -4,7 +4,7 @@
 
 import os
 import json
-lines_per_file = 1000000
+lines_per_file = 250000
 lines = []
 lines_counter = 0
 created_files = 0
