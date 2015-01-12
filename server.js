@@ -60,7 +60,6 @@ server.post('/join', function(req, res) {
   if (finished) {
     res.send("0");
   } else {
-    var mips = req.body.mips;
     if (req.body.workerId) {
       var id = req.body.workerId;
     } else {
