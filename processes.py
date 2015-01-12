@@ -12,7 +12,7 @@ def make_threads():
     for i in range(2):
         p = threading.Thread(target=make_worker)
         p.start()
-        time.sleep(.5)
+        time.sleep(.1)
         threads.append(p)
     done = False
     while not done:
@@ -26,9 +26,3 @@ for i in range(multiprocessing.cpu_count()):
     process = multiprocessing.Process(target=make_threads)
     jobs.append(process)
     process.start()
-
-# for i in jobs:
-#     i.start()
-
-# for i in jobs:
-#     i.join()
